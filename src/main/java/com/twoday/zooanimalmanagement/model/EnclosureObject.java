@@ -11,20 +11,18 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 @Entity
-public class Animal {
+public class EnclosureObject {
     @Id
     @SequenceGenerator(
-            sequenceName = "animal_id_sequence",
-            name = "animal_id_sequence",
+            sequenceName = "enclosure_object_id_sequence",
+            name = "enclosure_object_id_sequence",
             allocationSize = 1
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "animal_id_sequence"
+            generator = "enclosure_object_id_sequence"
     )
     private Integer id;
-    private String species;
-    private String food;
+    private String name;
     private String enclosureName;
-    private String zooName;
 }

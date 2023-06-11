@@ -1,6 +1,6 @@
-package com.twoday.zooanimalmanagement.model;
+package com.twoday.zooanimalmanagement.dto;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,12 +12,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Data
-@Entity
-public class Enclosure {
+public class EnclosureRequestDto {
     @Id
     private String name;
     private String size;
     private String location;
-    private String zooName;
+    private List<String> objects;
 
 }

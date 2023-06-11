@@ -1,19 +1,18 @@
-package com.twoday.zooanimalmanagement.dto;
+package com.twoday.zooanimalmanagement.model;
 
-import com.twoday.zooanimalmanagement.model.Enclosure;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Data
+@Entity
 public class Zoo {
+    @Id
     private String name;
-    private List<AnimalRequestDto> animals;
-    private List<Enclosure> enclosures;
 }
