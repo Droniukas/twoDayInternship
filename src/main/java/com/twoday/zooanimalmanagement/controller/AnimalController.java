@@ -1,7 +1,7 @@
 package com.twoday.zooanimalmanagement.controller;
 
-import com.twoday.zooanimalmanagement.Service.ZooService;
-import com.twoday.zooanimalmanagement.dto.ZooRequestDto;
+import com.twoday.zooanimalmanagement.Service.AnimalService;
+import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
 import com.twoday.zooanimalmanagement.model.Animal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,16 +12,15 @@ import java.util.List;
 import static com.twoday.zooanimalmanagement.ZooAnimalManagementApplication.BASE_URL;
 
 @RestController
-@RequestMapping(value = BASE_URL + "/zoo")
-public class ZooController {
+@RequestMapping(value = BASE_URL + "/zoo/animal")
+public class AnimalController {
 
     @Autowired
-    ZooService zooService;
+    private AnimalService animalService;
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping()
-    public List<Animal> createNewZoo(@RequestBody ZooRequestDto zoo) {
-        return zooService.createNewZoo(zoo);
+    @PostMapping("/addAnimals")
+    public List<Animal> addAnimals(@RequestBody List<AnimalRequestDto> animals, @RequestParam String zooName) {
+        return animalService.addAnimals(animals, zooName);
     }
-
 }
