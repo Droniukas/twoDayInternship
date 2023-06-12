@@ -23,4 +23,9 @@ public class AnimalController {
     public List<Animal> addAnimals(@RequestBody List<AnimalRequestDto> animals, @RequestParam String zooName) {
         return animalService.addAnimals(animals, zooName);
     }
+
+    @PutMapping("/removeAnimalById/{id}")
+    public Animal removeAnimalById(@PathVariable Integer id, @RequestParam Integer amount) {
+        return animalService.removeAnimalById(id, amount);
+    }
 }
