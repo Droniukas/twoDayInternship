@@ -1,15 +1,14 @@
 package com.twoday.zooanimalmanagement.Service;
 
 import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
-import com.twoday.zooanimalmanagement.dto.EnclosureRequestDto;
 import com.twoday.zooanimalmanagement.dto.ZooRequestDto;
 import com.twoday.zooanimalmanagement.model.Animal;
 import com.twoday.zooanimalmanagement.model.Enclosure;
 import com.twoday.zooanimalmanagement.model.EnclosureObject;
-import com.twoday.zooanimalmanagement.model.Zoo;
 import com.twoday.zooanimalmanagement.repository.AnimalRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureObjectRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ZooService {
     @Autowired
     AnimalRepository animalRepository;
@@ -26,10 +26,11 @@ public class ZooService {
     @Autowired
     EnclosureObjectRepository enclosureObjectRepository;
 
+
     public List<Animal> createNewZoo(ZooRequestDto zoo) {
         saveEnclosures(zoo);
         saveAnimals(zoo);
-        return List.of();
+        return animalRepository.findAll();
     }
 
     private void saveEnclosures(ZooRequestDto zoo) {
@@ -55,125 +56,105 @@ public class ZooService {
     }
 
     private void saveAnimals(ZooRequestDto zoo) {
-        List<AnimalRequestDto> vegetarianAnimalDtos = zoo.getAnimals().stream()
-                .filter(animal -> animal.getFood().equals("Herbivore"))
-                .toList();
-        EnclosureRequestDto enclosure = findSuitableEnclosure(zoo.getEnclosures());
-        List<Animal> animals = getMappedAnimals(vegetarianAnimalDtos, enclosure, zoo);
-        animals.forEach(animal -> animalRepository.save(animal));
+        Map<String, List<AnimalRequestDto>> animalsGroupedBySpecies = zoo.getAnimals().stream()
+                .collect(Collectors.groupingBy(AnimalRequestDto::getFood));
+
+        List<AnimalRequestDto> vegetarianAnimalDtos = animalsGroupedBySpecies.get("Herbivore");
+        List<Animal> vegetarianAnimals = getMappedAnimals(vegetarianAnimalDtos, zoo);
+
+        List<AnimalRequestDto> carnivoreAnimalDtos = animalsGroupedBySpecies.get("Carnivore");
+        List<List<Animal>> groupedCarnivoreAnimals = getGroupedCarnivoreAnimals(carnivoreAnimalDtos, zoo);
+
+        List<List<Animal>> allAnimalsGrouped = new ArrayList<>(groupedCarnivoreAnimals);
+        allAnimalsGrouped.add(vegetarianAnimals);
+        assignEnclosuresToAllAnimals(allAnimalsGrouped);
+
+        System.out.println(enclosureRepository.findAll());
     }
 
-    private EnclosureRequestDto findSuitableEnclosure(List<EnclosureRequestDto> enclosures) {
-        List<EnclosureRequestDto> emptyEnclosures = new ArrayList<>();
-        enclosures.forEach(enclosure -> {
-            if (animalRepository.findAll().stream().noneMatch(
-                    animal -> animal.getEnclosureName().equals(enclosure.getName()))
-            ) {
-                emptyEnclosures.add(enclosure);
-            }
-        });
-        return emptyEnclosures.stream().findFirst().get(); // tas yra negerai nes mes cia nekreipiam demesio i enclosure dydi (fix this)
+
+
+    private void assignEnclosuresToAllAnimals(List<List<Animal>> groupedAnimals) {
+        groupedAnimals.sort(Comparator.comparingInt(animals -> animals.stream().mapToInt(Animal::getAmount).sum()));
     }
+
+
+//    private EnclosureRequestDto findSuitableEnclosure(List<EnclosureRequestDto> enclosures) {
+//        List<EnclosureRequestDto> emptyEnclosures = new ArrayList<>();
+//        enclosures.forEach(enclosure -> {
+//            if (animalRepository.findAll().stream().noneMatch(
+//                    animal -> animal.getEnclosureName().equals(enclosure.getName()))
+//            ) {
+//                emptyEnclosures.add(enclosure);
+//            }
+//        });
+//        return emptyEnclosures.stream().findFirst().get(); // tas yra negerai nes mes cia nekreipiam demesio i enclosure dydi (fix this)
+//    }
 
     private List<Animal> getMappedAnimals(
             List<AnimalRequestDto> animalDtosToMap,
-            EnclosureRequestDto enclosure,
             ZooRequestDto zoo
     ) {
-        List<Animal> animals = new ArrayList<>();
-        animalDtosToMap.forEach(animalRequestDto -> {
+        List<Animal> mappedAnimals = new ArrayList<>();
+        animalDtosToMap.forEach(animalToMap -> {
             Animal animal = Animal.builder()
-                    .species(animalRequestDto.getSpecies())
-                    .food(animalRequestDto.getFood())
+                    .species(animalToMap.getSpecies())
+                    .food(animalToMap.getFood())
                     .zooName(zoo.getName())
-                    .enclosureName(enclosure.getName())
+                    .amount(animalToMap.getAmount())
                     .build();
-            for (int i = 1; i <= animalRequestDto.getAmount(); i++) {
-                animals.add(animal);
-            }
+            mappedAnimals.add(animal);
         });
-        return animals;
+        return mappedAnimals;
     }
-//
-//    public void transferAnimals(List<Animal> animals, List<Enclosure> enclosures) {
-//        // Group vegetarian animals in the same enclosure
-//        List<Animal> vegetarianAnimals = animals.stream()
-//                .filter(animal -> animal.getFood().equals("Herbivore"))
-//                .toList();
-//
-//        assignAnimalsToEnclosures(vegetarianAnimals, enclosures);
-//
-//        // Group carnivore animals by species
-//        Map<String, List<Animal>> carnivoreAnimalsBySpecies = animals.stream()
-//                .filter(animal -> animal.getFood().equals("Carnivore"))
-//                .collect(Collectors.groupingBy(Animal::getSpecies));
-//        System.out.println(carnivoreAnimalsBySpecies);
-//
-//        // Assign carnivore animals of the same species to the same enclosure
-//        carnivoreAnimalsBySpecies.forEach((species, carnivoreAnimals) ->
-//                assignAnimalsToEnclosures(carnivoreAnimals, enclosures)
-//        );
-//
-//        // Group carnivore animals of different species in the same enclosure (if necessary)
-//        List<Animal> carnivoreAnimals = animals.stream()
-//                .filter(animal -> animal.getFood().equals("Carnivore"))
-//                .toList();
-//
-//        groupCarnivoreAnimals(carnivoreAnimals, enclosures);
-//    }
-//
-//    private void assignAnimalsToEnclosures(List<Animal> animals, List<Enclosure> enclosures) {
-//        for (Animal animal : animals) {
-//            Enclosure enclosure = findSuitableEnclosure(animal, enclosures);
-//            if (enclosure != null) {
-//                animal.setEnclosureName(enclosure.getName());
-//                animalRepository.save(animal);
-//            } else {
-//                // Handle the case when there are no suitable enclosures available
-//                // You can throw an exception, log a warning, or implement custom logic
-//            }
-//        }
-//    }
-//
-//    private Enclosure findSuitableEnclosure(Animal animal, List<Enclosure> enclosures) {
-//        // Find an enclosure that matches the animal's requirements (e.g., size, location)
-//        // You can implement your own logic here based on your specific requirements and constraints
-//
-//        // Example logic: Find the first available enclosure of the required size and location
-//        return enclosures.stream()
-//                .filter(enclosure -> enclosure.getSize().equals("Large")) // Replace with suitable condition
-//                .filter(enclosure -> enclosure.getLocation().equals("Outside")) // Replace with suitable condition
-////                .filter(enclosure -> zoo) // Ensure the enclosure is empty
-//                .findFirst()
-//                .orElse(null);
-//    }
-//
-//    private void groupCarnivoreAnimals(List<Animal> carnivoreAnimals, List<Enclosure> enclosures) {
-//        int carnivoreCount = carnivoreAnimals.size();
-//        int enclosureCount = enclosures.size();
-//
-//        if (carnivoreCount > 1 && enclosureCount > 1) {
-//            int maxCarnivoresPerEnclosure = 2; // Maximum number of different carnivore species per enclosure
-//
-//            int numOfEnclosuresNeeded = (int) Math.ceil(carnivoreCount / (double) maxCarnivoresPerEnclosure);
-//            if (numOfEnclosuresNeeded <= enclosureCount) {
-//                // Distribute carnivore animals across enclosures
-//                List<Animal> shuffledCarnivores = new ArrayList<>(carnivoreAnimals);
-//                Collections.shuffle(shuffledCarnivores); // Randomize the order of animals
-//
-//                Iterator<Animal> iterator = shuffledCarnivores.iterator();
-//                for (Enclosure enclosure : enclosures) {
-//                    for (int i = 0; i < maxCarnivoresPerEnclosure && iterator.hasNext(); i++) {
-//                        Animal animal = iterator.next();
-//                        animal.setEnclosureName(enclosure.getName());
-//                        animalRepository.save(animal);
-//                    }
-//                }
-//            } else {
-//                // Handle the case when there are not enough enclosures for the carnivores
-//                // You can throw an exception, log a warning, or implement custom logic
-//            }
-//        }
-//    }
 
+    private List<List<Animal>> getGroupedCarnivoreAnimals(
+            List<AnimalRequestDto> carnivoreAnimalDtos,
+            ZooRequestDto zoo
+    ) {
+        int MAX_CARNIVORES_PER_ENCLOSURE = 2;
+        int carnivoreSpeciesCount = carnivoreAnimalDtos.size();
+        if (carnivoreSpeciesCount == 0) return List.of();
+
+        int emptyEnclosureCount = zoo.getEnclosures().size() - 1;
+
+        int numOfEnclosuresNeeded = (int) Math.ceil((float) carnivoreSpeciesCount / MAX_CARNIVORES_PER_ENCLOSURE);
+        if (numOfEnclosuresNeeded > emptyEnclosureCount) throw new RuntimeException("not enough space");
+
+        HashMap<Integer, List<AnimalRequestDto>> animalDtoGroups = new HashMap<>();
+        Iterator<AnimalRequestDto> carnivoreAnimalIterator = carnivoreAnimalDtos.iterator();
+
+        List<Integer> numbersRepresentingEmptyEnclosures = new ArrayList<>();
+        for (int i = 0; i < emptyEnclosureCount; i++) numbersRepresentingEmptyEnclosures.add(i);
+        Iterator<Integer> numbersRepresentingEmptyEnclosuresIterator = numbersRepresentingEmptyEnclosures.iterator();
+
+        while (carnivoreAnimalIterator.hasNext()) {
+            if (!numbersRepresentingEmptyEnclosuresIterator.hasNext()) {
+                numbersRepresentingEmptyEnclosuresIterator = numbersRepresentingEmptyEnclosures.iterator();
+            }
+
+            AnimalRequestDto animalDto = carnivoreAnimalIterator.next();
+            Integer numberRepresentingEmptyEnclosure = numbersRepresentingEmptyEnclosuresIterator.next();
+
+            if (animalDtoGroups.containsKey(numberRepresentingEmptyEnclosure)) {
+                List<AnimalRequestDto> assignedAnimals = animalDtoGroups.get(numberRepresentingEmptyEnclosure);
+                assignedAnimals.add(animalDto);
+            } else {
+                animalDtoGroups.put(
+                        numberRepresentingEmptyEnclosure,
+                        new ArrayList<>(Collections.singletonList(animalDto))
+                );
+            }
+        }
+
+        List<List<Animal>> groupedCarnivoreAnimals = new ArrayList<>();
+
+        animalDtoGroups.forEach((enclosure, animalRequestDtos) -> {
+            groupedCarnivoreAnimals.add(getMappedAnimals(
+                    animalRequestDtos,
+                    zoo));
+        });
+
+        return groupedCarnivoreAnimals;
+    }
 }

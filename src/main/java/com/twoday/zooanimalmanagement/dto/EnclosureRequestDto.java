@@ -13,7 +13,6 @@ import java.util.List;
 @Builder
 @Data
 public class EnclosureRequestDto {
-    @Id
     private String name;
     private String size;
     private String location;
