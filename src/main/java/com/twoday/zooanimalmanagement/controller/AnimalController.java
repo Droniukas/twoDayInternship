@@ -24,8 +24,13 @@ public class AnimalController {
         return animalService.addAnimals(animals, zooName);
     }
 
-    @PutMapping("/removeAnimalById/{id}")
-    public Animal removeAnimalById(@PathVariable Integer id, @RequestParam Integer amount) {
-        return animalService.removeAnimalById(id, amount);
+    @PutMapping("/removeById/{id}")
+    public List<Animal> removeById(@PathVariable Integer id, @RequestParam Integer amount) {
+        return animalService.removeById(id, amount);
+    }
+
+    @GetMapping("/getAllByZooName/{zooName}")
+    public List<Animal> getAllByZooName(@PathVariable String zooName) {
+        return animalService.getAllByZooName(zooName);
     }
 }

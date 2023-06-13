@@ -19,11 +19,11 @@ public class AnimalService {
     private ZooService zooService;
 
     public List<Animal> addAnimals(List<AnimalRequestDto> animalRequestDtos, String zooName) {
-        zooService.saveAnimals(animalRequestDtos, zooName);
+        animalRepository.saveAll(zooService.getReassignedAnimals(animalRequestDtos, zooName));
         return animalRepository.findByZooName(zooName);
     }
 
-    public Animal removeAnimalById(Integer id, Integer amount) {
+    public List<Animal> removeById(Integer id, Integer amount) {
         Optional<Animal> animalToRemove = animalRepository.findById(id);
         if (animalToRemove.isEmpty()) throw new RuntimeException("No animal found");
 
@@ -33,7 +33,12 @@ public class AnimalService {
             animalToRemove.get().setAmount(animalToRemove.get().getAmount() - amount);
         }
 
-        zooService.saveAnimals(null, animalToRemove.get().getZooName());
-        return animalToRemove.get(); // make sure to finish implementing getting the original animal
+        animalRepository.saveAll(
+                zooService.getReassignedAnimals(null, animalToRemove.get().getZooName()));
+        return animalRepository.findAll();
+    }
+
+    public List<Animal> getAllByZooName(String zooName) {
+        return animalRepository.findByZooName(zooName);
     }
 }

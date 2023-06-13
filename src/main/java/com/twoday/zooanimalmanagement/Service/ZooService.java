@@ -1,11 +1,10 @@
 package com.twoday.zooanimalmanagement.Service;
 
 import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
-import com.twoday.zooanimalmanagement.dto.EnclosureRequestDto;
 import com.twoday.zooanimalmanagement.dto.ZooRequestDto;
+import com.twoday.zooanimalmanagement.mapper.EnclosureMapper;
 import com.twoday.zooanimalmanagement.model.Animal;
 import com.twoday.zooanimalmanagement.model.Enclosure;
-import com.twoday.zooanimalmanagement.model.EnclosureObject;
 import com.twoday.zooanimalmanagement.model.Zoo;
 import com.twoday.zooanimalmanagement.repository.AnimalRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureObjectRepository;
@@ -19,50 +18,33 @@ import java.util.stream.Collectors;
 
 @Service
 public class ZooService {
+
     @Autowired
     AnimalRepository animalRepository;
     @Autowired
     EnclosureRepository enclosureRepository;
 
     @Autowired
-    EnclosureObjectRepository enclosureObjectRepository;
-    
-    @Autowired
     ZooRepository zooRepository;
+
+    @Autowired
+    EnclosureObjectRepository enclosureObjectRepository;
+
 
     public List<Animal> createNewZoo(ZooRequestDto zoo) {
         String zooName = zoo.getName();
 
         zooRepository.save(Zoo.builder().name(zooName).build());
-        addEnclosures(zoo.getEnclosures(), zooName);
-        saveAnimals(zoo.getAnimals(), zooName);
+        enclosureRepository.saveAll(
+                EnclosureMapper.mapEnclosureRequestDtosToModels(zoo.getEnclosures(), zooName));
+        enclosureObjectRepository.saveAll(
+                EnclosureMapper.mapEnclosureRequestDtosToEnclosureObjects(zoo.getEnclosures()));
+        animalRepository.saveAll(getReassignedAnimals(zoo.getAnimals(), zooName));
 
         return animalRepository.findByZooName(zooName);
     }
 
-    private void addEnclosures(List<EnclosureRequestDto> enclosureRequestDtos, String zooName) {
-        enclosureRequestDtos.forEach(enclosureRequestDto -> {
-            Enclosure enclosure = Enclosure.builder()
-                    .name(enclosureRequestDto.getName())
-                    .size(enclosureRequestDto.getSize())
-                    .location(enclosureRequestDto.getLocation())
-                    .zooName(zooName)
-                    .build();
-
-            enclosureRequestDto.getObjects().forEach(object -> {
-                EnclosureObject enclosureObject = EnclosureObject.builder()
-                        .name(object)
-                        .enclosureName(enclosureRequestDto.getName())
-                        .build();
-
-                enclosureObjectRepository.save(enclosureObject);
-            });
-
-            enclosureRepository.save(enclosure);
-        });
-    }
-
-    public void saveAnimals(List<AnimalRequestDto> newAnimalRequestDtos, String zooName) {
+    public List<Animal> getReassignedAnimals(List<AnimalRequestDto> newAnimalRequestDtos, String zooName) {
         List<Animal> animals = mapAnimalRequestDtosToModels(newAnimalRequestDtos, zooName);
 
         Map<String, List<Animal>> animalsGroupedBySpecies = animals.stream()
@@ -77,9 +59,7 @@ public class ZooService {
         allAnimalsGrouped.add(vegetarianAnimals);
 
         List<Enclosure> enclosures = enclosureRepository.findByZooName(zooName);
-        List<Animal> outputAnimals = assignEnclosuresToAnimalGroups(allAnimalsGrouped, enclosures);
-
-        animalRepository.saveAll(outputAnimals);
+        return assignEnclosuresToAnimalGroups(allAnimalsGrouped, enclosures);
     }
 
     private List<Animal> mapAnimalRequestDtosToModels(List<AnimalRequestDto> animalRequestDtos, String zooName) {
