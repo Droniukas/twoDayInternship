@@ -1,11 +1,11 @@
 services:
   db:
-    container_name: postgres
+    container_name: zoo_animal_management
     image: postgres
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=root
-      - PGDATA=/data/postgres
+      - POSTGRES_DB=zoo_animal_management
     volumes:
       - db:/data/postgres
     ports:

@@ -25,8 +25,13 @@ public class EnclosureController {
         return enclosureService.addEnclosures(enclosures, zooName);
     }
 
-//    @DeleteMapping("/removeEnclosureByName/{enclosureName}")
-//    public List<Enclosure> removeEnclosureByName(@PathVariable String enclosureName) {
-//        return enclosureService.removeEnclosureByName(enclosureName);
-//    }
+    @DeleteMapping("/removeEnclosureById/{enclosureId}")
+    public List<Enclosure> removeEnclosureById(@PathVariable Integer enclosureId) {
+        return enclosureService.removeEnclosureById(enclosureId);
+    }
+
+    @GetMapping("/getAllByZooName/{zooName}")
+    public List<Enclosure> getAllEnclosuresByZooName(@PathVariable String zooName) {
+        return enclosureService.getAllEnclosuresByZooName(zooName);
+    }
 }

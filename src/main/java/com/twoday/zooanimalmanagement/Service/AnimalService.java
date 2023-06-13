@@ -4,7 +4,9 @@ import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
 import com.twoday.zooanimalmanagement.model.Animal;
 import com.twoday.zooanimalmanagement.repository.AnimalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +27,8 @@ public class AnimalService {
 
     public List<Animal> removeById(Integer id, Integer amount) {
         Optional<Animal> animalToRemove = animalRepository.findById(id);
-        if (animalToRemove.isEmpty()) throw new RuntimeException("No animal found");
+        if (animalToRemove.isEmpty())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Animal not found");
 
         if (animalToRemove.get().getAmount() <= amount) {
             animalRepository.deleteById(id);

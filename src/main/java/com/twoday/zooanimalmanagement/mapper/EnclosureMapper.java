@@ -11,6 +11,7 @@ public class EnclosureMapper {
 
     public static List<Enclosure> mapEnclosureRequestDtosToModels(List<EnclosureRequestDto> enclosureRequestDtos, String zooName) {
         List<Enclosure> outputEnclosures = new ArrayList<>();
+        if (enclosureRequestDtos == null) return  outputEnclosures;
         enclosureRequestDtos.forEach(enclosureRequestDto -> {
             Enclosure enclosure = Enclosure.builder()
                     .name(enclosureRequestDto.getName())

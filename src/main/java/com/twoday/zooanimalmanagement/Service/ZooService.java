@@ -10,17 +10,22 @@ import com.twoday.zooanimalmanagement.repository.AnimalRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureObjectRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureRepository;
 import com.twoday.zooanimalmanagement.repository.ZooRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Transactional
 @Service
 public class ZooService {
 
     @Autowired
     AnimalRepository animalRepository;
+
     @Autowired
     EnclosureRepository enclosureRepository;
 
@@ -34,35 +39,49 @@ public class ZooService {
     public List<Animal> createNewZoo(ZooRequestDto zoo) {
         String zooName = zoo.getName();
 
+        if (zoo.getEnclosures() != null && !zoo.getEnclosures().isEmpty()) {
+            enclosureRepository.saveAll(
+                    EnclosureMapper.mapEnclosureRequestDtosToModels(zoo.getEnclosures(), zooName));
+            enclosureObjectRepository.saveAll(
+                    EnclosureMapper.mapEnclosureRequestDtosToEnclosureObjects(zoo.getEnclosures()));
+        }
+
+        if (zoo.getAnimals() != null && !zoo.getAnimals().isEmpty()) {
+            animalRepository.saveAll(getReassignedAnimals(zoo.getAnimals(), zooName));
+        }
+
+
         zooRepository.save(Zoo.builder().name(zooName).build());
-        enclosureRepository.saveAll(
-                EnclosureMapper.mapEnclosureRequestDtosToModels(zoo.getEnclosures(), zooName));
-        enclosureObjectRepository.saveAll(
-                EnclosureMapper.mapEnclosureRequestDtosToEnclosureObjects(zoo.getEnclosures()));
-        animalRepository.saveAll(getReassignedAnimals(zoo.getAnimals(), zooName));
 
         return animalRepository.findByZooName(zooName);
     }
 
-    public List<Animal> getReassignedAnimals(List<AnimalRequestDto> newAnimalRequestDtos, String zooName) {
-        List<Animal> animals = mapAnimalRequestDtosToModels(newAnimalRequestDtos, zooName);
+    public List<Animal> getReassignedAnimals(
+            List<AnimalRequestDto> newAnimalRequestDtos,
+            String zooName
+    ) {
+        List<Animal> allZooAnimals = getAllArrangedAnimalsWithNewDtos(newAnimalRequestDtos, zooName);
 
-        Map<String, List<Animal>> animalsGroupedBySpecies = animals.stream()
+        List<Enclosure> allZooEnclosures = enclosureRepository.findByZooName(zooName);
+
+        Map<String, List<Animal>> animalsGroupedBySpecies = allZooAnimals.stream()
                 .collect(Collectors.groupingBy(Animal::getFood));
 
         List<Animal> vegetarianAnimals = animalsGroupedBySpecies.get("Herbivore");
+        Integer emptyEnclosureCount = allZooEnclosures.size();
+        if (vegetarianAnimals != null) emptyEnclosureCount--;
 
         List<Animal> carnivoreAnimals = animalsGroupedBySpecies.get("Carnivore");
-        List<List<Animal>> groupedCarnivoreAnimals = getGroupedCarnivoreAnimals(carnivoreAnimals, zooName);
+        List<List<Animal>> groupedCarnivoreAnimals = getGroupedCarnivoreAnimals(
+                carnivoreAnimals, emptyEnclosureCount);
 
         List<List<Animal>> allAnimalsGrouped = new ArrayList<>(groupedCarnivoreAnimals);
         allAnimalsGrouped.add(vegetarianAnimals);
 
-        List<Enclosure> enclosures = enclosureRepository.findByZooName(zooName);
-        return assignEnclosuresToAnimalGroups(allAnimalsGrouped, enclosures);
+        return assignEnclosuresToAnimalGroups(allAnimalsGrouped, allZooEnclosures);
     }
 
-    private List<Animal> mapAnimalRequestDtosToModels(List<AnimalRequestDto> animalRequestDtos, String zooName) {
+    private List<Animal> getAllArrangedAnimalsWithNewDtos(List<AnimalRequestDto> animalRequestDtos, String zooName) {
         List<Animal> animals = new ArrayList<>(animalRepository.findByZooName(zooName));
         if (animalRequestDtos == null) return animals;
 
@@ -101,7 +120,7 @@ public class ZooService {
         while (groupedAnimalsIterator.hasNext()) {
             Enclosure enclosure = enclosuresIterator.next();
             groupedAnimalsIterator.next().forEach(animal -> {
-                animal.setEnclosureName(enclosure.getName());
+                animal.setEnclosureId(enclosure.getId());
                 outputAnimalList.add(animal);
             });
         }
@@ -119,19 +138,18 @@ public class ZooService {
         };
     }
 
-
     private List<List<Animal>> getGroupedCarnivoreAnimals(
             List<Animal> carnivoreAnimals,
-            String zooName
+            Integer emptyEnclosureCount
     ) {
         int MAX_CARNIVORES_PER_ENCLOSURE = 2;
         if (carnivoreAnimals == null) return List.of();
         int carnivoreSpeciesCount = carnivoreAnimals.size();
 
-        int emptyEnclosureCount = enclosureRepository.findByZooName(zooName).size() - 1;
-
         int numOfEnclosuresNeeded = (int) Math.ceil((float) carnivoreSpeciesCount / MAX_CARNIVORES_PER_ENCLOSURE);
-        if (numOfEnclosuresNeeded > emptyEnclosureCount) throw new RuntimeException("not enough space");
+        if (numOfEnclosuresNeeded > emptyEnclosureCount)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot perform action - Animals don't fit into enclosures");
 
         HashMap<Integer, List<Animal>> carnivoreAnimalGroups = new HashMap<>();
         Iterator<Animal> carnivoreAnimalIterator = carnivoreAnimals.iterator();

@@ -25,7 +25,7 @@ public class Animal {
     private Integer id;
     private String species;
     private String food;
-    private String enclosureName;
+    private Integer enclosureId;
     private String zooName;
     private Integer amount;
 }
