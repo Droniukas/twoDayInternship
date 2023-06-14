@@ -7,6 +7,7 @@ import com.twoday.zooanimalmanagement.mapper.EnclosureMapper;
 import com.twoday.zooanimalmanagement.model.Enclosure;
 import com.twoday.zooanimalmanagement.repository.AnimalRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureRepository;
+import com.twoday.zooanimalmanagement.repository.ZooRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,13 +26,16 @@ public class EnclosureService {
     AnimalRepository animalRepository;
 
     @Autowired
+    ZooRepository zooRepository;
+
+    @Autowired
     ZooService zooService;
 
     @Transactional
     public List<EnclosureReturnDto> addEnclosures(List<EnclosureRequestDto> enclosureRequestDtos, String zooName) {
-//        if (enclosureRepository.findByName(newZoo.getName()).stream().anyMatch(zoo -> zoo.getName().equals(newZoo.getName())))
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-//                    "Zoo with specified name already exists, please provide an unique name");
+        if (zooRepository.findByName(zooName).isEmpty())
+            throw new ApiException(HttpStatus.NOT_FOUND, "Zoo with provided name doesn't exist");
+
         enclosureRepository.saveAll(
                 EnclosureMapper.mapEnclosureRequestDtosToModels(enclosureRequestDtos, zooName));
 

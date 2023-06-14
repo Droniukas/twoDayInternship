@@ -1,6 +1,5 @@
 package com.twoday.zooanimalmanagement.dto;
 
-import com.twoday.zooanimalmanagement.model.Enclosure;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

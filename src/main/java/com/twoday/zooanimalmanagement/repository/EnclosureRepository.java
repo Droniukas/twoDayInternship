@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface EnclosureRepository extends JpaRepository<Enclosure, Integer> {
     List<Enclosure> findByZooName(String zooName);
+
     void deleteByZooName(String zooName);
 
 }

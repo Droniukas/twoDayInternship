@@ -100,7 +100,8 @@ public class ZooService {
                     .amount(animalRequestDto.getAmount())
                     .zooName(zooName)
                     .build());
-        };
+        }
+        ;
 
         return animals;
     }
@@ -131,7 +132,7 @@ public class ZooService {
             case "Large" -> 3;
             case "Medium" -> 2;
             case "Small" -> 1;
-            default -> throw new ApiException(HttpStatus.BAD_REQUEST, "Unknown: " + size);
+            default -> throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unknown: " + size);
         };
     }
 

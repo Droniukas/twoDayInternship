@@ -1,6 +1,6 @@
 package com.twoday.zooanimalmanagement.dto;
 
-
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,11 +12,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Data
-public class EnclosureReturnDto {
-    private Integer id;
-    private String name;
-    private String size;
-    private String location;
-    private String zooName;
-    private List<String> enclosureObjectNames;
+public class EnclosureRequestDtoList {
+    private List<@Valid EnclosureRequestDto> enclosures;
 }

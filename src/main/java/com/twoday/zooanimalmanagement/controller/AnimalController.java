@@ -1,8 +1,9 @@
 package com.twoday.zooanimalmanagement.controller;
 
-import com.twoday.zooanimalmanagement.service.AnimalService;
-import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
+import com.twoday.zooanimalmanagement.dto.AnimalRequestDtoList;
+import com.twoday.zooanimalmanagement.exception.ApiException;
 import com.twoday.zooanimalmanagement.model.Animal;
+import com.twoday.zooanimalmanagement.service.AnimalService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +23,13 @@ public class AnimalController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/addAnimals")
-    public List<Animal> addAnimals(@RequestBody List<@Valid AnimalRequestDto> animals, @RequestParam String zooName) {
-        return animalService.addAnimals(animals, zooName);
+    public List<Animal> addAnimals(@RequestBody @Valid AnimalRequestDtoList animals, @RequestParam String zooName) {
+        return animalService.addAnimals(animals.getAnimals(), zooName);
     }
 
     @PutMapping("/removeById/{id}")
-    public List<Animal> removeById(@PathVariable Integer id, @RequestParam @Valid @Positive Integer amount) {
+    public List<Animal> removeById(@PathVariable Integer id, @RequestParam Integer amount) {
+        if (amount <= 0) throw new ApiException(HttpStatus.BAD_REQUEST, "Amount to delete must be more than 0");
         return animalService.removeById(id, amount);
     }
 

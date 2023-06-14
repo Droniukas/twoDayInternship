@@ -4,6 +4,7 @@ import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
 import com.twoday.zooanimalmanagement.exception.ApiException;
 import com.twoday.zooanimalmanagement.model.Animal;
 import com.twoday.zooanimalmanagement.repository.AnimalRepository;
+import com.twoday.zooanimalmanagement.repository.ZooRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,15 @@ public class AnimalService {
     private AnimalRepository animalRepository;
 
     @Autowired
+    private ZooRepository zooRepository;
+
+    @Autowired
     private ZooService zooService;
 
     public List<Animal> addAnimals(List<AnimalRequestDto> animalRequestDtos, String zooName) {
+        if (zooRepository.findByName(zooName).isEmpty())
+            throw new ApiException(HttpStatus.NOT_FOUND, "Zoo with provided name doesn't exist");
+
         animalRepository.saveAll(zooService.getReassignedAnimals(animalRequestDtos, zooName));
         return animalRepository.findByZooName(zooName);
     }

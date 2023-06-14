@@ -1,6 +1,5 @@
 package com.twoday.zooanimalmanagement.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +21,6 @@ public class Enclosure {
     private String size;
     private String location;
     private String zooName;
-    @OneToMany(cascade=CascadeType.ALL, mappedBy="enclosure")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "enclosure")
     private List<EnclosureObject> enclosureObjects;
 }
