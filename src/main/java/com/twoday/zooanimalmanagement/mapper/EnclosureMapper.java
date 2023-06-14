@@ -1,6 +1,7 @@
 package com.twoday.zooanimalmanagement.mapper;
 
 import com.twoday.zooanimalmanagement.dto.EnclosureRequestDto;
+import com.twoday.zooanimalmanagement.dto.EnclosureReturnDto;
 import com.twoday.zooanimalmanagement.model.Enclosure;
 import com.twoday.zooanimalmanagement.model.EnclosureObject;
 
@@ -19,27 +20,35 @@ public class EnclosureMapper {
                     .location(enclosureRequestDto.getLocation())
                     .zooName(zooName)
                     .build();
-
+            List<EnclosureObject> enclosureObjects = new ArrayList<>();
+            enclosureRequestDto.getObjects().forEach(enclosureObject -> {
+                enclosureObjects.add(EnclosureObject.builder()
+                        .name(enclosureObject)
+                        .enclosure(enclosure)
+                        .build());
+            });
+            enclosure.setEnclosureObjects(enclosureObjects);
             outputEnclosures.add(enclosure);
         });
         return outputEnclosures;
     }
-
-    public static List<EnclosureObject> mapEnclosureRequestDtosToEnclosureObjects(
-            List<EnclosureRequestDto> enclosureRequestDtos
-    ) {
-        List<EnclosureObject> outputEnclosureObjects = new ArrayList<>();
-
-        enclosureRequestDtos.forEach(enclosureRequestDto -> {
-            enclosureRequestDto.getObjects().forEach(object -> {
-                EnclosureObject enclosureObject = EnclosureObject.builder()
-                        .name(object)
-                        .enclosureName(enclosureRequestDto.getName())
-                        .build();
-
-                outputEnclosureObjects.add(enclosureObject);
+    public static List<EnclosureReturnDto> mapEnclosuresToEnclosureReturnDtos(List<Enclosure> enclosures) {
+        List<EnclosureReturnDto> enclosureReturnDtos = new ArrayList<>();
+        enclosures.forEach(enclosure -> {
+            EnclosureReturnDto enclosureReturnDto = EnclosureReturnDto.builder()
+                    .id(enclosure.getId())
+                    .name(enclosure.getName())
+                    .size(enclosure.getSize())
+                    .location(enclosure.getLocation())
+                    .zooName(enclosure.getZooName())
+                    .build();
+            List<String> enclosureObjectNames = new ArrayList<>();
+            enclosure.getEnclosureObjects().forEach(enclosureObject -> {
+                enclosureObjectNames.add(enclosureObject.getName());
             });
+            enclosureReturnDto.setEnclosureObjectNames(enclosureObjectNames);
+            enclosureReturnDtos.add(enclosureReturnDto);
         });
-        return outputEnclosureObjects;
+        return enclosureReturnDtos;
     }
 }

@@ -1,8 +1,9 @@
 package com.twoday.zooanimalmanagement.controller;
 
-import com.twoday.zooanimalmanagement.Service.ZooService;
+import com.twoday.zooanimalmanagement.service.ZooService;
 import com.twoday.zooanimalmanagement.dto.ZooRequestDto;
 import com.twoday.zooanimalmanagement.model.Animal;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -20,8 +21,7 @@ public class ZooController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping()
-    public List<Animal> createNewZoo(@RequestBody ZooRequestDto zoo) {
+    public List<Animal> createNewZoo(@RequestBody @Valid ZooRequestDto zoo) {
         return zooService.createNewZoo(zoo);
     }
-
 }

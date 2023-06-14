@@ -12,5 +12,4 @@ public class ZooAnimalManagementApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ZooAnimalManagementApplication.class, args);
 	}
-
 }

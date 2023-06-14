@@ -1,20 +1,19 @@
-package com.twoday.zooanimalmanagement.Service;
+package com.twoday.zooanimalmanagement.service;
 
 import com.twoday.zooanimalmanagement.dto.AnimalRequestDto;
 import com.twoday.zooanimalmanagement.dto.ZooRequestDto;
+import com.twoday.zooanimalmanagement.exception.ApiException;
 import com.twoday.zooanimalmanagement.mapper.EnclosureMapper;
 import com.twoday.zooanimalmanagement.model.Animal;
 import com.twoday.zooanimalmanagement.model.Enclosure;
 import com.twoday.zooanimalmanagement.model.Zoo;
 import com.twoday.zooanimalmanagement.repository.AnimalRepository;
-import com.twoday.zooanimalmanagement.repository.EnclosureObjectRepository;
 import com.twoday.zooanimalmanagement.repository.EnclosureRepository;
 import com.twoday.zooanimalmanagement.repository.ZooRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,22 +31,20 @@ public class ZooService {
     @Autowired
     ZooRepository zooRepository;
 
-    @Autowired
-    EnclosureObjectRepository enclosureObjectRepository;
+    public List<Animal> createNewZoo(ZooRequestDto newZoo) {
+        if (zooRepository.findByName(newZoo.getName()).stream().anyMatch(zoo -> zoo.getName().equals(newZoo.getName())))
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Zoo with specified name already exists, please provide an unique name");
 
+        String zooName = newZoo.getName();
 
-    public List<Animal> createNewZoo(ZooRequestDto zoo) {
-        String zooName = zoo.getName();
-
-        if (zoo.getEnclosures() != null && !zoo.getEnclosures().isEmpty()) {
+        if (newZoo.getEnclosures() != null && !newZoo.getEnclosures().isEmpty()) {
             enclosureRepository.saveAll(
-                    EnclosureMapper.mapEnclosureRequestDtosToModels(zoo.getEnclosures(), zooName));
-            enclosureObjectRepository.saveAll(
-                    EnclosureMapper.mapEnclosureRequestDtosToEnclosureObjects(zoo.getEnclosures()));
+                    EnclosureMapper.mapEnclosureRequestDtosToModels(newZoo.getEnclosures(), zooName));
         }
 
-        if (zoo.getAnimals() != null && !zoo.getAnimals().isEmpty()) {
-            animalRepository.saveAll(getReassignedAnimals(zoo.getAnimals(), zooName));
+        if (newZoo.getAnimals() != null && !newZoo.getAnimals().isEmpty()) {
+            animalRepository.saveAll(getReassignedAnimals(newZoo.getAnimals(), zooName));
         }
 
 
@@ -134,7 +131,7 @@ public class ZooService {
             case "Large" -> 3;
             case "Medium" -> 2;
             case "Small" -> 1;
-            default -> throw new IllegalArgumentException("Unknown size: " + size);
+            default -> throw new ApiException(HttpStatus.BAD_REQUEST, "Unknown: " + size);
         };
     }
 
@@ -148,7 +145,7 @@ public class ZooService {
 
         int numOfEnclosuresNeeded = (int) Math.ceil((float) carnivoreSpeciesCount / MAX_CARNIVORES_PER_ENCLOSURE);
         if (numOfEnclosuresNeeded > emptyEnclosureCount)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Cannot perform action - Animals don't fit into enclosures");
 
         HashMap<Integer, List<Animal>> carnivoreAnimalGroups = new HashMap<>();
