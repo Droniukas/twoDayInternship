@@ -73,7 +73,7 @@ public class ZooService {
                 carnivoreAnimals, emptyEnclosureCount);
 
         List<List<Animal>> allAnimalsGrouped = new ArrayList<>(groupedCarnivoreAnimals);
-        allAnimalsGrouped.add(vegetarianAnimals);
+        if (vegetarianAnimals != null) allAnimalsGrouped.add(vegetarianAnimals);
 
         return assignEnclosuresToAnimalGroups(allAnimalsGrouped, allZooEnclosures);
     }
